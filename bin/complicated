@@ -1,0 +1,154 @@
+#!/usr/bin/env ruby
+
+$LOAD_PATH << File.expand_path(File.dirname(__FILE__) + '/../lib')
+require 'complicated'
+require 'tty-prompt'
+require 'colorize'
+
+$prompt = TTY::Prompt.new
+
+def gets
+  return STDIN.gets.strip
+end
+
+def banner
+  puts "The Unofficial Complicated Game v#{Complicated::VERSION}."
+end
+
+def clear
+  Gem.win_platform? ? (system "cls") : (system "clear")
+end
+
+banner
+
+include Complicated
+
+puts "Creating Empires wizard, input the # of empires:"
+
+gets.to_i.times do |i|
+  puts "======The #{i+1}th empire======"
+  print 'Title of the empire: '
+  name = gets.strip
+
+  puts "Creating the empire's capital province:"
+  print 'Enter the name: '
+  house = new_house(gets.strip, name)
+  house[:inf] += 3
+  HOUSES[house[:name]] = house
+
+  empire = new_empire name, house[:name]
+  EMPIRES[name] = empire
+
+  puts "Creating provinces under `#{name}`"
+  print 'Enter the # of provinces: '
+
+  gets.to_i.times do
+    print 'Enter the name: '
+    house = new_house(gets.strip, name)
+    HOUSES[house[:name]] = house
+  end
+end
+
+clear
+
+loop do
+  HOUSES.each do |key, val|
+    empire = EMPIRES[val[:empire]]
+    emperor = empire[:king] == key
+
+    clear
+    puts "#{key}'s turn, press Enter key..."
+    gets
+    clear
+    print_world
+    puts
+    HOUSES.each do |k, v|
+      puts
+      print_proc_house v if v[:empire] == val[:empire]
+    end
+
+    puts "\n\nCurrent province: #{key}".bold
+
+    val[:money] += val[:pop] / 2 + val[:inf]
+    val[:pop] += 1 + val[:pop] / 5 + val[:inf]
+    puts "Population & treasure increased with #{val[:inf]} infrastructure bonus.".blink
+
+    command = $prompt.select("Command:", [
+      'recruit',
+      'attack',
+      'revolt',
+      'collect',
+      'send',
+      'sendtroop',
+      'buildinfrastructure'
+    ], per_page: 15)
+    if command == 'recruit'
+      money = val[:money]
+      pop = val[:pop]
+      x = money > pop ? pop : money
+      x /= 2
+      val[:pop] -= x
+      val[:money] -= x
+      val[:army] += x
+    elsif command == 'attack'
+      enemy = HOUSES[$prompt.select("Opponent:", HOUSES.map { |k,v|
+        v[:name] if v[:empire] != val[:empire]
+      }.compact)]
+      result = start_battle(val[:army], enemy[:army])
+      val[:army] = result[0]
+      enemy[:army] = result[1]
+      if enemy[:army] == 0
+        enemy[:empire] = val[:empire]
+        puts "You won"
+      else
+        puts "Battle ended... no victories claimed"
+      end
+      inf = [val[:army], enemy[:army]].max / 7
+      puts "Both sides infrastructure - #{inf}"
+      val[:inf] -= inf
+      enemy[:inf] -= inf
+    elsif command == 'revolt'
+      print "Name of your empire: "
+      val[:empire] = gets
+      EMPIRES[val[:empire]] = new_empire(val[:empire], val[:name])
+      puts "Successful"
+    elsif command == 'collect'
+      house = HOUSES[$prompt.select("Province: ", HOUSES.map {|k,v|
+        v[:name]
+      }.compact)]
+      print "amount: "
+      i = gets.to_i
+      house[:money] -= i
+      val[:money] += i
+    elsif command == 'send'
+      house = HOUSES[$prompt.select("Province: ", HOUSES.map {|k,v|
+        v[:name]
+      }.compact)]
+      print "amount: "
+      i = gets.to_i
+      house[:money] += i
+      val[:money] -= i
+    elsif command == 'sendtroop'
+      house = HOUSES[$prompt.select("Province: ", HOUSES.map {|k,v|
+        v[:name] if v[:empire] == val[:empire]
+      }.compact)]
+      print "amount: "
+      i = gets.to_i
+      house[:army] += i
+      val[:army] -= i
+    elsif command == 'buildinfrastructure'
+      if val[:money] < 10
+        puts "Too few money!"
+      else
+        inf = val[:inf]
+        money = inf ** 2
+        val[:inf] += 1
+        val[:money] -= money
+        puts "#{money} million spent, infra + 1"
+      end
+    end
+    puts "Press Enter..."
+    gets
+  end
+
+end

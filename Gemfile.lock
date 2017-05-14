@@ -1,0 +1,41 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ansi (1.5.0)
+    builder (3.2.3)
+    colorize (0.8.1)
+    equatable (0.5.0)
+    minitest (5.10.1)
+    minitest-reporters (1.1.14)
+      ansi
+      builder
+      minitest (>= 5.0)
+      ruby-progressbar
+    necromancer (0.4.0)
+    pastel (0.7.1)
+      equatable (~> 0.5.0)
+      tty-color (~> 0.4.0)
+    rake (12.0.0)
+    ruby-progressbar (1.8.1)
+    tty-color (0.4.2)
+    tty-cursor (0.4.0)
+    tty-prompt (0.12.0)
+      necromancer (~> 0.4.0)
+      pastel (~> 0.7.0)
+      tty-cursor (~> 0.4.0)
+      wisper (~> 1.6.1)
+    wisper (1.6.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  colorize
+  minitest
+  minitest-reporters
+  rake
+  ruby-progressbar
+  tty-prompt
+
+BUNDLED WITH
+   1.12.5
